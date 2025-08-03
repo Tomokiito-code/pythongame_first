@@ -1,0 +1,51 @@
+Pythonの仮想環境を構築する方法はいくつかありますが、一般的な手順は以下の通りです：
+
+### **1. 仮想環境の作成**
+Pythonには標準で `venv` という仮想環境管理ツールが含まれています。  
+以下のコマンドを実行すると、新しい仮想環境を作成できます：
+```bash
+python -m venv myenv
+```
+`myenv` は仮想環境の名前なので、好きな名前に変更できます。
+
+### **2. 仮想環境の有効化**
+作成した仮想環境を有効化するには、OSによって異なるコマンドを使用します：
+
+- **Windows（コマンドプロンプト）**
+  ```bash
+  myenv\Scripts\activate
+  ```
+- **Windows（PowerShell）**
+  ```powershell
+  myenv\Scripts\Activate.ps1
+  ```
+- **Mac/Linux**
+  ```bash
+  source myenv/bin/activate
+  ```
+
+### **3. 仮想環境内でのパッケージ管理**
+仮想環境が有効になった状態で、必要なパッケージをインストールできます：
+```bash
+pip install numpy pandas flask
+```
+インストール済みのパッケージを確認するには：
+```bash
+pip list
+```
+
+### **4. 仮想環境の終了**
+仮想環境を終了するには、以下のコマンドを実行します：
+```bash
+deactivate
+```
+
+### **5. 仮想環境の削除**
+仮想環境を削除するには、フォルダごと削除すればOKです：
+```bash
+rm -rf myenv  # Mac/Linux
+rmdir /s /q myenv  # Windows
+```
+
+より詳しい手順や応用例については、[こちら](https://qiita.com/toki_mwc/items/f2e81bdf244cab46cf5e)や[こちら](https://www.choge-blog.com/programming/python-venv/)を参考にしてください！  
+何か設定で困ったことがあれば、お気軽に聞いてくださいね😊。

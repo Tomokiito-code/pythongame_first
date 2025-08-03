@@ -1,0 +1,4 @@
+Python実行コマンド
+python test_pygame.py
+　　　　　↑
+　これはコードのファイル
