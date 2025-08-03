@@ -259,7 +259,7 @@ def run_infinite_battle(screen, clock):
     ai_tracker = SimpleAITracker()
 
     running = True
-    print("無限編スタート")
+    print("無限編START")
 
 
     while True:
