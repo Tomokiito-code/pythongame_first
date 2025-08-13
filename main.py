@@ -42,6 +42,12 @@ def draw_home():
     draw_button("無限編", SCREEN_HEIGHT // 2 + 80, (255, 100, 100), "infinity", "assets/mugen.png")
     draw_button("Exit", SCREEN_HEIGHT // 2 + 160, (200, 200, 200), "exit", "assets/icon_exit.png")
 
+def draw_text_centered(screen, text, size, color, y):
+    font = pygame.font.SysFont("msgothic", size)
+    text_surface = font.render(text, True, color)
+    x = screen.get_width() // 2 - text_surface.get_width() // 2
+    screen.blit(text_surface, (x, y))
+
 def draw_button(text, y, color, tag, icon_path=None):
     btn_font = pygame.font.Font("assets/NotoSansJP-VariableFont_wght.ttf", 36)
     btn_surf = btn_font.render(text, True, color)
@@ -277,6 +283,10 @@ def run_infinite_battle(screen, clock):
     active_boss = Boss(stage_level)
     boss_group = pygame.sprite.Group(active_boss)
     ai_tracker = SimpleAITracker()
+    font = pygame.font.SysFont("msgothic", 36)
+    small_font = pygame.font.SysFont("msgothic", 28)
+
+
     score = Score()  # ← ここで初期化！
 
 
@@ -358,11 +368,21 @@ def run_infinite_battle(screen, clock):
         player.draw(screen)
         active_boss.draw(screen)
         bullet_manager.draw(screen)
+        
+        # ステージ名（中央上部）
+        draw_text_centered(screen, f"Lv.{stage_level}", 36, (255, 100, 255), 10)
+
+        # スコア表示（左上）
+        score_text = font.render(f"Score: {score.value}", True, (255, 255, 255))
+        screen.blit(score_text, (60, 60))
+
+        # コンボ表示（右上）
         score.draw_combo(screen, font)
 
-        draw_boss_hp_bar(screen, active_boss.health, 100 + stage_level * 20)
-        draw_text_centered(screen, f"無限ボス Lv.{stage_level}", 36, (255, 100, 255), 50)
-        draw_text_centered(screen, f"Score: {score.value}", 28, (255, 255, 255), 90)
+        # HPバー（プレイヤー）
+        draw_hp_bar(screen, player.hp, player.max_hp)
+
+
 
         pygame.display.update()
         clock.tick(60)
