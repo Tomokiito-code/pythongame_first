@@ -31,5 +31,11 @@ class Score:
         screen.blit(combo_text, (screen.get_width() - 180, 10))
         screen.blit(multiplier_text, (screen.get_width() - 180, 40))
 
+    def force_combo(self, base_score):
+        self.combo_count += 1
+        self.combo_multiplier = 1.0 + self.combo_count * 0.1
+        self.value += int(base_score * self.combo_multiplier)
+        self.last_kill_time = time.time()
+
     def __str__(self):
         return str(self.value)  # ← これで f"{score}" が数値になる！

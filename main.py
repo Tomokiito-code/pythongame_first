@@ -19,17 +19,27 @@ from score import Score
 
 PLAYER_NAME = "智喜"
 PLAYER_LEVEL = 12
+enemy_list = []  # ✅ 敵リストを空で初期化
+boss_img = pygame.image.load("assets/boss.png")
+boss_img = pygame.transform.scale(boss_img, (128, 128))  # サイズは必要に応じて調整
+fireball_img = pygame.image.load("assets/fireball.png")
+fireball_img = pygame.transform.scale(fireball_img, (32, 32))  # サイズは必要に応じて調整
+
 
 # --- 初期化 ---
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+player_img = pygame.image.load("assets/player.png")  # プレイヤー画像の読み込み
+player_img = pygame.transform.scale(player_img, (64, 64))  # サイズ調整
+player = Player(player_img)  # ✅ プレイヤーのインスタンスを作成
 pygame.display.set_caption("Shooter Game")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 48)
 button_registry = {}
 sounds = load_sounds()
 score = Score()  # ゲーム開始時に初期化
+
 
 
 # --- ホーム画面UI ---
@@ -256,7 +266,7 @@ def run_game(screen, clock):
         pygame.display.update()
         clock.tick(60)
 
-def run_infinite_battle(screen, clock):
+def run_infinite_battle(screen, clock, enemy_list, player, score, boss_img, fireball_img, sounds):
     try:
         background_img = pygame.transform.scale(
             pygame.image.load("assets/infinity_bg.png"), (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -275,8 +285,9 @@ def run_infinite_battle(screen, clock):
     else:
         print("⚠️ BGMが読み込まれていないため、再生できません。")
 
+    boss_spawned = False  # ✅ これを追加
     stage_level = 1
-    score = 0
+    score = Score()
     player_hits = 0
     player = Player(player_img)
     bullet_manager = BulletManager(arrow_img, homing_arrow_img)
@@ -285,10 +296,24 @@ def run_infinite_battle(screen, clock):
     ai_tracker = SimpleAITracker()
     font = pygame.font.SysFont("msgothic", 36)
     small_font = pygame.font.SysFont("msgothic", 28)
-
-
+    
     score = Score()  # ← ここで初期化！
 
+    if all(not e["active"] for e in enemy_list) and not boss_spawned:
+        boss = StaticBoss(boss_img, SCREEN_WIDTH // 2 - 64, 50, fireball_img)
+        boss_spawned = True
+        player_damaged_during_boss = False  # ✅ フラグ初期化
+
+    for fb in active_boss.fireballs[:]:
+        fire_rect = pygame.Rect(fb["x"] - 8, fb["y"] - 8, 16, 16)
+        if fire_rect.colliderect(player.get_hitbox()):
+            player.take_damage(20)
+            active_boss.fireballs.remove(fb)
+            player_damaged_during_boss = True
+
+    if boss.get_hitbox().colliderect(player.get_hitbox()):
+        player.take_damage(50)
+        player_damaged_during_boss = True
 
     running = True
     print("無限編START")
@@ -332,11 +357,16 @@ def run_infinite_battle(screen, clock):
             if fire_rect.colliderect(player.get_hitbox()):
                 player.take_damage(20)
                 active_boss.fireballs.remove(fb)
+                score.reset_combo()  # ✅ ダメージでコンボリセット
+            if active_boss.get_hitbox().colliderect(player.get_hitbox()):
+                player.take_damage(50)
+                score.reset_combo()  # ✅ 接触でもコンボリセット
+
 
         # 🏆 ステージ進行判定
         if player_hits >= 5 or active_boss.health <= 0:
             stage_level += 1
-            score.add(100)
+            score.force_combo(100)  # ✅ 時間制限なしでコンボ加算
             player_hits = 0
             draw_text_centered(screen, "Boss Defeated!", 40, (255, 255, 0), SCREEN_HEIGHT // 2)
             pygame.display.update()
@@ -402,7 +432,7 @@ while True:
             if action == "easy":
                 run_game(screen, clock)
             elif action == "infinity":
-                run_infinite_battle(screen, clock)
+                run_infinite_battle(screen, clock, enemy_list, player, score, boss_img, fireball_img, sounds)
             elif action == "exit":
                 pygame.quit()
                 sys.exit()
