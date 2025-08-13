@@ -1,6 +1,8 @@
 import pygame
 import sys
 import random
+import time
+
 from ai_tracker import SimpleAITracker
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
 from player import Player
@@ -12,6 +14,8 @@ from ui import draw_homing_cooldown, draw_score, draw_hp_bar, draw_text_centered
 from sound import load_sounds, play_bgm, stop_bgm
 from score_log import log_score
 from boss import StaticBoss
+from score import Score
+
 
 PLAYER_NAME = "智喜"
 PLAYER_LEVEL = 12
@@ -25,6 +29,8 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 48)
 button_registry = {}
 sounds = load_sounds()
+score = Score()  # ゲーム開始時に初期化
+
 
 # --- ホーム画面UI ---
 def draw_home():
@@ -85,6 +91,7 @@ def run_game(screen, clock):
     item_heal_img = pygame.transform.scale(pygame.image.load("assets/item_heal.png"), (32, 32))
     item_speed_img = pygame.transform.scale(pygame.image.load("assets/item_speed.png"), (32, 32))
     fireball_img = pygame.transform.scale(pygame.image.load("assets/fireball.png"), (24, 24))
+    font = pygame.font.SysFont(None, 36)  # お好みのサイズで
 
     player = Player(player_img)
     bullet_manager = BulletManager(arrow_img, homing_arrow_img)
@@ -92,7 +99,10 @@ def run_game(screen, clock):
     items = []
     boss = None
     boss_spawned = False
-    score = 0
+
+    score = Score()      # ✅ スコア管理クラス
+    combo = 0            # ✅ コンボ初期化（ここに追加！）
+
     ENEMY_SPEED = 2
     game_over = False
     stage_cleared = False
@@ -100,6 +110,7 @@ def run_game(screen, clock):
     space_pressed_time = 0
     last_homing_time = 0
     homing_cooldown = 10000
+
 
     running = True
     while running:
@@ -173,14 +184,17 @@ def run_game(screen, clock):
                     if enemy["active"] and bullet_rect.colliderect(get_enemy_rect(enemy)):
                         enemy["active"] = False
                         bullet_manager.bullets.remove(bullet)
-                        score += 1
+                        score.add(100)  # ✅ コンボ加算も含む
+
                         if random.random() < 0.3:
                             items.append(create_item(enemy["x"], enemy["y"]))
                         break
+
                 if boss and boss.active and bullet_rect.colliderect(boss.get_hitbox()):
                     boss.take_damage(60)
                     bullet_manager.bullets.remove(bullet)
-                    score += 3
+                    score.add(300)  # ✅ コンボ加算も含む
+
 
             check_item_collision(items, player.rect, player)
 
@@ -198,11 +212,17 @@ def run_game(screen, clock):
                 stop_bgm()
                 sounds["clear"].play()
 
-        draw_score(screen, score)
         draw_hp_bar(screen, player.hp, player.max_hp)  # ✅ HPゲージ表示
         draw_enemies(enemy_list, screen, enemy_img)
         bullet_manager.draw(screen)
         draw_items(items, screen, item_heal_img, item_speed_img)
+        # スコア表示（左上）
+        score_text = font.render(f"Score: {score.value}", True, (255, 255, 255))
+        screen.blit(score_text, (20, 60))  # ← HPバーより下にずらす！
+
+        # コンボ表示（右上）
+        score.draw_combo(screen, font)
+
         player.draw(screen)
         if boss and boss.active:
             boss.draw(screen)
@@ -257,6 +277,8 @@ def run_infinite_battle(screen, clock):
     active_boss = Boss(stage_level)
     boss_group = pygame.sprite.Group(active_boss)
     ai_tracker = SimpleAITracker()
+    score = Score()  # ← ここで初期化！
+
 
     running = True
     print("無限編START")
@@ -304,7 +326,7 @@ def run_infinite_battle(screen, clock):
         # 🏆 ステージ進行判定
         if player_hits >= 5 or active_boss.health <= 0:
             stage_level += 1
-            score += 100
+            score.add(100)
             player_hits = 0
             draw_text_centered(screen, "Boss Defeated!", 40, (255, 255, 0), SCREEN_HEIGHT // 2)
             pygame.display.update()
@@ -336,10 +358,11 @@ def run_infinite_battle(screen, clock):
         player.draw(screen)
         active_boss.draw(screen)
         bullet_manager.draw(screen)
+        score.draw_combo(screen, font)
 
         draw_boss_hp_bar(screen, active_boss.health, 100 + stage_level * 20)
         draw_text_centered(screen, f"無限ボス Lv.{stage_level}", 36, (255, 100, 255), 50)
-        draw_text_centered(screen, f"Score: {score}", 28, (255, 255, 255), 90)
+        draw_text_centered(screen, f"Score: {score.value}", 28, (255, 255, 255), 90)
 
         pygame.display.update()
         clock.tick(60)
